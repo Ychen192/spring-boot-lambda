@@ -37,6 +37,19 @@
 			<version>1.18.20</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.mobilitydata/gtfs-realtime-bindings -->
+		<dependency>
+			<groupId>org.mobilitydata</groupId>
+			<artifactId>gtfs-realtime-bindings</artifactId>
+			<version>0.0.8</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
