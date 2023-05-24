@@ -1,7 +1,7 @@
 # Read Me First
 The following was discovered as part of building this project:
 
-* The original package name 'com.yan.spring-boot-demo' is invalid and this project uses 'com.yan.springbootdemo' instead.
+* The original package name 'com.yan.spring-boot-lambda' is invalid and this project uses 'com.yan.springbootlambda' instead.
 
 # Getting Started
 

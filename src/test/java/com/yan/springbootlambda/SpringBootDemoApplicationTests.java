@@ -1,4 +1,4 @@
-package com.yan.springbootdemo;
+package com.yan.springbootlambda;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
