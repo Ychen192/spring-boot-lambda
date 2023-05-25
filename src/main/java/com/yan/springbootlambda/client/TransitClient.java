@@ -1,11 +1,11 @@
 package com.yan.springbootlambda.client;
 
 import com.google.transit.realtime.GtfsRealtime;
+import com.yan.springbootlambda.exception.TransitClientException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,13 +16,12 @@ public class TransitClient {
     public static final String MTA_TRANSIT_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-ace";
     public static final String MTA_TRANSIT_API_KEY = "x4jPVKUJ8K2bq8jSyhoIf4bA0HiwAR939fcUXTUZ";
 
-    public String fetchTransitSchedule() {
+    public String fetchTransitSchedule() throws TransitClientException {
         URL url;
         try {
             url = new URL(MTA_TRANSIT_URL);
             HttpURLConnection myURLConnection = (HttpURLConnection) url.openConnection();
             myURLConnection.setRequestProperty("X-API-KEY", MTA_TRANSIT_API_KEY);
-
             GtfsRealtime.FeedMessage feed = GtfsRealtime.FeedMessage.parseFrom(myURLConnection.getInputStream());
 
             List<GtfsRealtime.TripUpdate> list = feed.getEntityList().stream()
@@ -31,7 +30,7 @@ public class TransitClient {
             return list.get(0).toString();
         } catch (IOException e) {
             e.printStackTrace();
+            throw new TransitClientException("Exception when calling mta url", e);
         }
-        return "";
     }
 }

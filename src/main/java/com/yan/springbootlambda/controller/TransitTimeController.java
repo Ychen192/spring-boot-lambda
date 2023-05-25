@@ -1,12 +1,10 @@
 package com.yan.springbootlambda.controller;
 
+import com.yan.springbootlambda.exception.TransitClientException;
 import com.yan.springbootlambda.model.Response;
 import com.yan.springbootlambda.service.TransitService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class TransitTimeController {
@@ -16,8 +14,26 @@ public class TransitTimeController {
 
     @RequestMapping(value = "/transit", method = RequestMethod.GET)
     @ResponseBody
-    public Response transitTime() {
+    public Response transitTime() throws TransitClientException {
         String resp = transitService.fetchTransitTime();
         return new Response(true, resp);
+    }
+
+    @RequestMapping(value = "/", method = RequestMethod.GET)
+    @ResponseBody
+    public Response hello() {
+        return new Response(true, "Hello World");
+    }
+
+    @RequestMapping(value = "/testClientException", method = RequestMethod.GET)
+    @ResponseBody
+    public Response clientException() throws TransitClientException {
+        throw new TransitClientException();
+    }
+
+    @RequestMapping(value = "/testException", method = RequestMethod.GET)
+    @ResponseBody
+    public Response exception() {
+        throw new RuntimeException();
     }
 }
