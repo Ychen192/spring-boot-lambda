@@ -12,9 +12,10 @@ public class LambdaHandler implements RequestHandler<AwsProxyRequest, AwsProxyRe
 
     static {
         try {
-            handler = SpringBootLambdaContainerHandler.getAwsProxyHandler(SpringBootDemoApplication.class); }
-        catch (ContainerInitializationException ex){
-            throw new RuntimeException("Unable to load spring boot application",ex); }
+            handler = SpringBootLambdaContainerHandler.getAwsProxyHandler(SpringBootDemoApplication.class);
+        } catch (ContainerInitializationException ex) {
+            throw new RuntimeException("Unable to load spring boot application", ex);
+        }
     }
 
     @Override

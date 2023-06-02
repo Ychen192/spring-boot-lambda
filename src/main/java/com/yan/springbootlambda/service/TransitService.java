@@ -6,9 +6,7 @@ import com.yan.springbootlambda.model.TrainStation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -33,17 +31,11 @@ public class TransitService {
 
     public List<TrainStation> fetchTransitStops(Character trainLine) {
         Map<String, TrainStation> stops = new HashMap<>();
-        BufferedReader reader;
-        String line;
-
-        try {
-            reader = new BufferedReader(new FileReader("src/main/resources/stops.txt"));
-            line = reader.readLine();
-            while (line != null) {
-                var words = line.split(",");
-                stops.put(words[0], new TrainStation(words[0], words[2]));
-                line = reader.readLine();
-            }
+        try (InputStream inputStream = getClass().getResourceAsStream("/stops.txt");
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            reader.lines()
+                    .map(line -> line.split(","))
+                    .forEach(line -> stops.put(line[0], new TrainStation(line[0], line[2])));
         } catch (IOException e) {
             e.printStackTrace();
         }
