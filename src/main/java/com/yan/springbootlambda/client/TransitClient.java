@@ -19,6 +19,7 @@ public class TransitClient {
     public List<GtfsRealtime.TripUpdate.StopTimeUpdate> fetchTransitSchedule() throws TransitClientException {
         URL url;
         try {
+            System.out.println("---fetch new time with api---");
             url = new URL(MTA_TRANSIT_URL);
             HttpURLConnection myURLConnection = (HttpURLConnection) url.openConnection();
             myURLConnection.setRequestProperty("X-API-KEY", MTA_TRANSIT_API_KEY);

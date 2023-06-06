@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -17,16 +18,33 @@ import java.util.stream.Collectors;
 
 @Service
 public class TransitService {
+
     @Autowired
     private TransitClient transitClient;
+    @Autowired
+    private Map<Instant, List<String>> transitTimeCache;
 
     public List<String> fetchTransitTime(String stationId) throws TransitClientException {
-        return transitClient.fetchTransitSchedule().stream()
-                .filter(it -> it.getStopId().contains(stationId))
-                .map(it -> it.getArrival().getTime())
-                .map(it -> Instant.ofEpochSecond(it).atZone(ZoneId.of("America/New_York")))
-                .map(it -> it.format(DateTimeFormatter.ofPattern("MM/dd/uuuu HH:mm:ss")))
-                .collect(Collectors.toList());
+        if (isStaleData()) {
+            var departureList = transitClient.fetchTransitSchedule().stream()
+                    .filter(it -> it.getStopId().contains(stationId))
+                    .map(it -> it.getArrival().getTime())
+                    .map(it -> Instant.ofEpochSecond(it).atZone(ZoneId.of("America/New_York")))
+                    .map(it -> it.format(DateTimeFormatter.ofPattern("MM/dd/uuuu HH:mm:ss")))
+                    .collect(Collectors.toList());
+            transitTimeCache.put(Instant.now(), departureList);
+            System.out.println("inserted and cache size " + transitTimeCache.size());
+            return departureList;
+        }
+        return (List<String>)transitTimeCache.values().toArray()[transitTimeCache.size() -1];
+    }
+
+    private Boolean isStaleData() {
+        var currentTime = Instant.now();
+        var lastFetchedTime = (Instant)transitTimeCache.keySet().toArray()[transitTimeCache.size() -1];
+        var timePassed = Duration.between(lastFetchedTime, currentTime).getSeconds();
+        System.out.println("Time passed: " + timePassed);
+        return timePassed > 30;
     }
 
     public List<TrainStation> fetchTransitStops(Character trainLine) {
