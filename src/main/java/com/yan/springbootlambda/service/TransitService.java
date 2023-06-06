@@ -19,10 +19,14 @@ import java.util.stream.Collectors;
 @Service
 public class TransitService {
 
-    @Autowired
     private TransitClient transitClient;
-    @Autowired
     private Map<Instant, List<String>> transitTimeCache;
+
+    @Autowired
+    public TransitService(TransitClient transitClient, Map<Instant, List<String>> transitTimeCache){
+        this.transitClient = transitClient;
+        this.transitTimeCache = transitTimeCache;
+    }
 
     public List<String> fetchTransitTime(String stationId) throws TransitClientException {
         if (isStaleData()) {

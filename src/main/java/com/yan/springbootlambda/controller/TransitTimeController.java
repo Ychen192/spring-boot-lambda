@@ -10,8 +10,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class TransitTimeController {
 
+    TransitService transitService;
+
     @Autowired
-    private TransitService transitService;
+    public TransitTimeController(TransitService transitService) {
+        this.transitService = transitService;
+    }
 
     @RequestMapping(value = "/train/time/{stationId}", method = RequestMethod.GET)
     @ResponseBody

@@ -19,7 +19,6 @@ public class Component {
     public static final long ZERO = 0L;
 
     @Bean
-    @Scope(value = WebApplicationContext.SCOPE_APPLICATION, proxyMode = ScopedProxyMode.TARGET_CLASS)
     public Map<Instant, List<String>> transitTimeCache() {
         var cache = new LinkedHashMap<Instant, List<String>>(CACHE_SIZE) {
             protected boolean removeEldestEntry(Map.Entry<Instant, List<String>> eldest) {
