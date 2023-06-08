@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 public class TransitClient {
 
     public static final String MTA_TRANSIT_BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F";
-    public static final String MTA_TRANSIT_API_KEY = "x4jPVKUJ8K2bq8jSyhoIf4bA0HiwAR939fcUXTUZ";
+    public static final String MTA_TRANSIT_API_KEY = System.getenv("MTA_TRANSIT_API_KEY");
 
     public List<GtfsRealtime.TripUpdate.StopTimeUpdate> fetchTransitSchedule(String stationId) throws TransitClientException {
         URL url;
