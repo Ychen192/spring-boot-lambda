@@ -1,17 +1,12 @@
 package com.yan.springbootlambda.client;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.transit.realtime.GtfsRealtime;
 import com.yan.springbootlambda.exception.TransitClientException;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.stream.Collectors;
 
