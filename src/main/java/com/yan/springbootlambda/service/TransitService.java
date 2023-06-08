@@ -1,8 +1,10 @@
 package com.yan.springbootlambda.service;
 
+import com.google.transit.realtime.GtfsRealtime;
 import com.yan.springbootlambda.client.TransitClient;
 import com.yan.springbootlambda.exception.TransitClientException;
 import com.yan.springbootlambda.model.TrainStation;
+import com.yan.springbootlambda.model.TransitData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,34 +23,52 @@ import java.util.stream.Collectors;
 public class TransitService {
 
     private TransitClient transitClient;
-    private Map<Instant, List<String>> transitTimeCache;
+    private Map<String, TransitData> transitTimeCache;
 
     @Autowired
-    public TransitService(TransitClient transitClient, Map<Instant, List<String>> transitTimeCache){
+    public TransitService(TransitClient transitClient, Map<String, TransitData> transitTimeCache){
         this.transitClient = transitClient;
         this.transitTimeCache = transitTimeCache;
     }
 
     public List<String> fetchTransitTime(String stationId) throws TransitClientException {
-        if (isStaleData()) {
-            var departureList = transitClient.fetchTransitSchedule().stream()
-                    .filter(it -> it.getStopId().contains(stationId))
-                    .map(it -> it.getArrival().getTime())
-                    .map(it -> Instant.ofEpochSecond(it).atZone(ZoneId.of("America/New_York")))
-                    .map(it -> it.format(DateTimeFormatter.ofPattern("MM/dd/uuuu HH:mm:ss")))
-                    .collect(Collectors.toList());
-            transitTimeCache.put(Instant.now(), departureList);
+        String trainLine = trainLine(stationId);
+        List<GtfsRealtime.TripUpdate.StopTimeUpdate> dataSet;
+        if (!transitTimeCache.containsKey(trainLine) || isStaleData(trainLine)) {
+            dataSet = new ArrayList<>(transitClient.fetchTransitSchedule(stationId));
+            transitTimeCache.put(trainLine, new TransitData(Instant.now(), dataSet));
             System.out.println("inserted and cache size " + transitTimeCache.size());
-            return departureList;
+        } else {
+            dataSet = transitTimeCache.get(trainLine).getDataSet();
         }
-        return (List<String>)transitTimeCache.values().toArray()[transitTimeCache.size() -1];
+
+        return dataSet.stream()
+                .filter(it -> it.getStopId().contains(stationId))
+                .map(it -> it.getArrival().getTime())
+                .map(it -> Instant.ofEpochSecond(it).atZone(ZoneId.of("America/New_York")))
+                .map(it -> it.format(DateTimeFormatter.ofPattern("MM/dd/uuuu HH:mm:ss")))
+                .collect(Collectors.toList());
     }
 
-    private Boolean isStaleData() {
+    private String trainLine(String stationId) {
+        return switch (stationId.toLowerCase().charAt(0)) {
+            case 'a', 'c', 'e' -> "ace";
+            case 'b', 'd', 'f', 'm' -> "bdfm";
+            case 'g' -> "g";
+            case 'j', 'z' -> "jz";
+            case 'n', 'q', 'r', 'w' -> "nqrw";
+            case 'l' -> "l";
+            case '1', '2', '3', '4', '5', '6', '7' -> "1234567";
+            case 's' -> "si";
+            default -> throw new IllegalArgumentException("Unsupported stationId");
+        };
+    }
+
+    private Boolean isStaleData(String line) {
         var currentTime = Instant.now();
-        var lastFetchedTime = (Instant)transitTimeCache.keySet().toArray()[transitTimeCache.size() -1];
+        var lastFetchedTime = transitTimeCache.get(line).getTimeFetched();
         var timePassed = Duration.between(lastFetchedTime, currentTime).getSeconds();
-        System.out.println("Time passed: " + timePassed);
+        System.out.println("Line: " + line + "  Time passed: " + timePassed);
         return timePassed > 30;
     }
 

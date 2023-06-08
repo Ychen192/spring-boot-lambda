@@ -13,14 +13,14 @@ import java.util.stream.Collectors;
 @Component
 public class TransitClient {
 
-    public static final String MTA_TRANSIT_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm";
-    public static final String MTA_TRANSIT_API_KEY = "x4jPVKUJ8K2bq8jSyhoIf4bA0HiwAR939fcUXTUZ";
+    public static final String MTA_TRANSIT_BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F";
+    public static final String MTA_TRANSIT_API_KEY = System.getenv("MTA_TRANSIT_API_KEY");
 
-    public List<GtfsRealtime.TripUpdate.StopTimeUpdate> fetchTransitSchedule() throws TransitClientException {
+    public List<GtfsRealtime.TripUpdate.StopTimeUpdate> fetchTransitSchedule(String stationId) throws TransitClientException {
         URL url;
         try {
             System.out.println("---fetch new time with api---");
-            url = new URL(MTA_TRANSIT_URL);
+            url = new URL(MTA_TRANSIT_BASE_URL + urlPath(stationId));
             HttpURLConnection myURLConnection = (HttpURLConnection) url.openConnection();
             myURLConnection.setRequestProperty("X-API-KEY", MTA_TRANSIT_API_KEY);
             GtfsRealtime.FeedMessage feed = GtfsRealtime.FeedMessage.parseFrom(myURLConnection.getInputStream());
@@ -35,7 +35,17 @@ public class TransitClient {
         }
     }
 
-
-
-
+    private String urlPath(String stationId) {
+        return switch (stationId.toLowerCase().charAt(0)) {
+            case 'a', 'c', 'e' -> "gtfs-ace";
+            case 'b', 'd', 'f', 'm' -> "gtfs-bdfm";
+            case 'g' -> "gtfs-g";
+            case 'j', 'z' -> "gtfs-jz";
+            case 'n', 'q', 'r', 'w' -> "gtfs-nqrw";
+            case 'l' -> "gtfs-l";
+            case '1', '2', '3', '4', '5', '6', '7' -> "gtfs";
+            case 's' -> "gtfs-si";
+            default -> throw new IllegalArgumentException("Unsupported stationId");
+        };
+    }
 }
