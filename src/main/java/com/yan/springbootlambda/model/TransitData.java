@@ -9,9 +9,9 @@ import java.util.List;
 @Data
 public class TransitData {
     Instant timeFetched;
-    List<GtfsRealtime.TripUpdate.StopTimeUpdate> dataSet;
+    List<GtfsRealtime.TripUpdate> dataSet;
 
-    public TransitData(Instant timeFetched, List<GtfsRealtime.TripUpdate.StopTimeUpdate> dataSet) {
+    public TransitData(Instant timeFetched, List<GtfsRealtime.TripUpdate> dataSet) {
         this.timeFetched = timeFetched;
         this.dataSet = dataSet;
     }

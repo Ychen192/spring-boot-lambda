@@ -16,7 +16,7 @@ public class TransitClient {
     public static final String MTA_TRANSIT_BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F";
     public static final String MTA_TRANSIT_API_KEY = System.getenv("MTA_TRANSIT_API_KEY");
 
-    public List<GtfsRealtime.TripUpdate.StopTimeUpdate> fetchTransitSchedule(String stationId) throws TransitClientException {
+    public List<GtfsRealtime.TripUpdate> fetchTransitSchedule(String stationId) throws TransitClientException {
         URL url;
         try {
             System.out.println("---fetch new time with api---");
@@ -26,8 +26,7 @@ public class TransitClient {
             GtfsRealtime.FeedMessage feed = GtfsRealtime.FeedMessage.parseFrom(myURLConnection.getInputStream());
 
             return feed.getEntityList().stream()
-                    .map(it -> it.getTripUpdate().getStopTimeUpdateList())
-                    .flatMap(List::stream)
+                    .map(GtfsRealtime.FeedEntity::getTripUpdate)
                     .collect(Collectors.toList());
         } catch (IOException e) {
             e.printStackTrace();
