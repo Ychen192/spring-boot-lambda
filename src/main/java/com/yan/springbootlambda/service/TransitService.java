@@ -5,14 +5,12 @@ import com.yan.springbootlambda.client.TransitClient;
 import com.yan.springbootlambda.exception.TransitClientException;
 import com.yan.springbootlambda.model.TrainStation;
 import com.yan.springbootlambda.model.TransitData;
+import com.yan.springbootlambda.model.TransitTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,41 +19,59 @@ public class TransitService {
 
     private final TransitClient transitClient;
     private final Map<String, TransitData> transitTimeCache;
+    private final Map<String, String> transitStopCache;
 
     @Autowired
-    public TransitService(TransitClient transitClient, Map<String, TransitData> transitTimeCache) {
+    public TransitService(TransitClient transitClient,
+                          Map<String, TransitData> transitTimeCache,
+                          Map<String, String> transitStopCache) {
         this.transitClient = transitClient;
         this.transitTimeCache = transitTimeCache;
+        this.transitStopCache = transitStopCache;
     }
 
-    public List<String> fetchTransitTime(String stationId) throws TransitClientException {
-        Character train = stationId.toLowerCase().charAt(0);
-        Character direction = 'n';
-        String trainGroup = trainLine(train);
+    public TransitTime fetchTransitTime(Character trainLine, String stationId) throws TransitClientException {
+        String trainGroup = trainGrooup(trainLine);
         List<GtfsRealtime.TripUpdate> dataSet;
         if (!transitTimeCache.containsKey(trainGroup) || isStaleData(trainGroup)) {
-            dataSet = new ArrayList<>(transitClient.fetchTransitSchedule(stationId));
+            dataSet = new ArrayList<>(transitClient.fetchTransitSchedule(trainLine));
             transitTimeCache.put(trainGroup, new TransitData(Instant.now(), dataSet));
-            System.out.println("inserted and cache size " + transitTimeCache.size());
         } else {
             dataSet = transitTimeCache.get(trainGroup).getDataSet();
         }
 
-        return dataSet.stream()
-                .filter(it -> filterByTrainLine(it, train))
-                .filter(it -> filterByDirection(it, direction))
+        var north = dataSet.stream()
+                .filter(it -> filterTripByTrainLine(it, trainLine))
+                .filter(it -> filterByDirection(it, 'n'))
                 .map(GtfsRealtime.TripUpdate::getStopTimeUpdateList)
                 .flatMap(Collection::stream)
                 .filter(it -> it.getStopId().contains(stationId))
-                .map(it -> it.getDeparture().getTime())
-                .map(it -> Instant.ofEpochSecond(it).atZone(ZoneId.of("America/New_York")))
-                .map(it -> it.format(DateTimeFormatter.ofPattern("MM/dd/uuuu HH:mm:ss")))
+                .map(it -> minutesLeft(it.getArrival().getTime()))
+                .sorted()
                 .collect(Collectors.toList());
+
+        var south = dataSet.stream()
+                .filter(it -> filterTripByTrainLine(it, trainLine))
+                .filter(it -> filterByDirection(it, 's'))
+                .map(GtfsRealtime.TripUpdate::getStopTimeUpdateList)
+                .flatMap(Collection::stream)
+                .filter(it -> it.getStopId().contains(stationId))
+                .map(it -> minutesLeft(it.getArrival().getTime()))
+                .sorted()
+                .collect(Collectors.toList());
+
+        return new TransitTime(north, south);
     }
 
-    public boolean filterByTrainLine(GtfsRealtime.TripUpdate trip, Character line) {
+    public long minutesLeft(long time) {
+        return Duration.between(Instant.now(), Instant.ofEpochSecond(time)).getSeconds()/60;
+
+    }
+
+    public boolean filterTripByTrainLine(GtfsRealtime.TripUpdate trip, Character line) {
         var tripId = trip.getTrip().getTripId().toLowerCase();
-        return !tripId.equals("") && tripId.charAt(tripId.length() - 4) == line;
+        var train = tripId.equals("") ? "" : tripId.split("_")[1].charAt(0);
+        return !tripId.equals("") && tripId.split("_")[1].charAt(0) == Character.toLowerCase(line);
     }
 
     public boolean filterByDirection(GtfsRealtime.TripUpdate trip, Character direction) {
@@ -63,8 +79,8 @@ public class TransitService {
         return !tripId.equals("") && tripId.charAt(tripId.length() - 1) == direction;
     }
 
-    private String trainLine(Character train) {
-        return switch (train) {
+    private String trainGrooup(Character train) {
+        return switch (Character.toLowerCase(train)) {
             case 'a', 'c', 'e' -> "ace";
             case 'b', 'd', 'f', 'm' -> "bdfm";
             case 'g' -> "g";
@@ -85,22 +101,27 @@ public class TransitService {
         return timePassed > 30;
     }
 
-    public List<TrainStation> fetchTransitStops(Character trainLine) {
-        Map<String, TrainStation> stops = new HashMap<>();
-        try (InputStream inputStream = getClass().getResourceAsStream("/stops.txt");
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            reader.lines()
-                    .map(line -> line.split(","))
-                    .forEach(line -> stops.put(line[0], new TrainStation(line[0], line[2])));
-        } catch (IOException e) {
-            e.printStackTrace();
+    public List<TrainStation> fetchTransitStops(Character trainLine) throws TransitClientException {
+        String trainGroup = trainGrooup(trainLine);
+
+        List<GtfsRealtime.TripUpdate> dataSet;
+        if (!transitTimeCache.containsKey(trainGroup) || isStaleData(trainGroup)) {
+            dataSet = new ArrayList<>(transitClient.fetchTransitSchedule(trainLine));
+            transitTimeCache.put(trainGroup, new TransitData(Instant.now(), dataSet));
+            System.out.println("inserted and cache size " + transitTimeCache.size());
+        } else {
+            dataSet = transitTimeCache.get(trainGroup).getDataSet();
         }
 
-        return stops.entrySet()
-                .stream()
-                .filter(it -> it.getKey().charAt(0) == Character.toUpperCase(trainLine))
-                .filter(it -> it.getKey().charAt(it.getKey().length() - 1) >= 48 && it.getKey().charAt(it.getKey().length() - 1) <= 57)
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+        return dataSet.stream()
+                .filter(it -> filterTripByTrainLine(it, trainLine))
+                .map(GtfsRealtime.TripUpdate::getStopTimeUpdateList)
+                .flatMap(Collection::stream)
+                .map(it -> new TrainStation(it.getStopId(), stationName(it.getStopId())))
+                .distinct().collect(Collectors.toList());
+    }
+
+    public String stationName(String stopId) {
+        return transitStopCache.getOrDefault(stopId, "");
     }
 }

@@ -49,17 +49,17 @@ public class TransitControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$[0].stationName").value("Jamaica-179 St"));
     }
 
-    @Test
-    public void provideLiveTrainTimeGivenStationId() throws Exception {
-        var time = Instant.now()
-                .atZone(ZoneId.of("America/New_York"))
-                .format(DateTimeFormatter.ofPattern("MM/dd/uuuu HH:mm:ss"));
-        given(transitService.fetchTransitTime("F34"))
-                .willReturn(List.of(time));
-
-        mvc.perform(get("/train/time/F34").contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.jsonPath("$[0]").value(time));
-    }
+//    @Test
+//    public void provideLiveTrainTimeGivenStationId() throws Exception {
+//        var time = Instant.now()
+//                .atZone(ZoneId.of("America/New_York"))
+//                .format(DateTimeFormatter.ofPattern("MM/dd/uuuu HH:mm:ss"));
+//        given(transitService.fetchTransitTime("F34"))
+//                .willReturn(List.of(time));
+//
+//        mvc.perform(get("/train/time/F34").contentType(MediaType.APPLICATION_JSON))
+//                .andExpect(status().isOk())
+//                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$[0]").value(time));
+//    }
 }

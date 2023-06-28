@@ -16,11 +16,11 @@ public class TransitClient {
     public static final String MTA_TRANSIT_BASE_URL = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2F";
     public static final String MTA_TRANSIT_API_KEY = System.getenv("MTA_TRANSIT_API_KEY");
 
-    public List<GtfsRealtime.TripUpdate> fetchTransitSchedule(String stationId) throws TransitClientException {
+    public List<GtfsRealtime.TripUpdate> fetchTransitSchedule(Character train) throws TransitClientException {
         URL url;
         try {
             System.out.println("---fetch new time with api---");
-            url = new URL(MTA_TRANSIT_BASE_URL + urlPath(stationId));
+            url = new URL(MTA_TRANSIT_BASE_URL + urlPath(train));
             HttpURLConnection myURLConnection = (HttpURLConnection) url.openConnection();
             myURLConnection.setRequestProperty("X-API-KEY", MTA_TRANSIT_API_KEY);
             GtfsRealtime.FeedMessage feed = GtfsRealtime.FeedMessage.parseFrom(myURLConnection.getInputStream());
@@ -34,8 +34,8 @@ public class TransitClient {
         }
     }
 
-    private String urlPath(String stationId) {
-        return switch (stationId.toLowerCase().charAt(0)) {
+    private String urlPath(Character train) {
+        return switch (Character.toLowerCase(train)) {
             case 'a', 'c', 'e' -> "gtfs-ace";
             case 'b', 'd', 'f', 'm' -> "gtfs-bdfm";
             case 'g' -> "gtfs-g";

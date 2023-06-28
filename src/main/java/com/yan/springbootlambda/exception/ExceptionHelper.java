@@ -11,6 +11,7 @@ public class ExceptionHelper {
 
     @ExceptionHandler(value = {TransitClientException.class})
     public ResponseEntity<Response> handleTransitClientException(TransitClientException ex) {
+        ex.printStackTrace();
         return new ResponseEntity<>(new Response(false, ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
