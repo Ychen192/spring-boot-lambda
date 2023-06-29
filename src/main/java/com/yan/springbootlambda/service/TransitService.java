@@ -64,19 +64,18 @@ public class TransitService {
     }
 
     public long minutesLeft(long time) {
-        return Duration.between(Instant.now(), Instant.ofEpochSecond(time)).getSeconds()/60;
+        return Duration.between(Instant.now(), Instant.ofEpochSecond(time)).getSeconds() / 60;
 
     }
 
     public boolean filterTripByTrainLine(GtfsRealtime.TripUpdate trip, Character line) {
         var tripId = trip.getTrip().getTripId().toLowerCase();
-        var train = tripId.equals("") ? "" : tripId.split("_")[1].charAt(0);
         return !tripId.equals("") && tripId.split("_")[1].charAt(0) == Character.toLowerCase(line);
     }
 
     public boolean filterByDirection(GtfsRealtime.TripUpdate trip, Character direction) {
         var tripId = trip.getTrip().getTripId().toLowerCase();
-        return !tripId.equals("") && tripId.charAt(tripId.length() - 1) == direction;
+        return !tripId.equals("") && tripId.split("\\.\\.")[1].charAt(0) == Character.toLowerCase(direction);
     }
 
     private String trainGrooup(Character train) {
@@ -115,10 +114,11 @@ public class TransitService {
 
         return dataSet.stream()
                 .filter(it -> filterTripByTrainLine(it, trainLine))
-                .map(GtfsRealtime.TripUpdate::getStopTimeUpdateList)
-                .flatMap(Collection::stream)
+                .filter(it -> filterByDirection(it, 's'))
+                .max(Comparator.comparing(it -> it.getStopTimeUpdateList().size())).get()
+                .getStopTimeUpdateList().stream()
                 .map(it -> new TrainStation(it.getStopId(), stationName(it.getStopId())))
-                .distinct().collect(Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     public String stationName(String stopId) {
